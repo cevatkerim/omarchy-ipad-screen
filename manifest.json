@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "kerim.ipad-screen",
+  "name": "iPad Screen",
+  "version": "0.1.0",
+  "author": "Cevat Kerim",
+  "license": "MIT",
+  "description": "Use a paired jailbroken iPad as a USB second display with the iPad Screen host.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {"barWidget": "BarWidget.qml"},
+  "barWidget": {
+    "displayName": "iPad Screen",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
