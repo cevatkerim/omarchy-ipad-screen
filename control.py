@@ -71,6 +71,15 @@ def status():
             stream.seek(max(0, log.stat().st_size - 4096))
             lines = stream.read().decode(errors='replace').splitlines()
         detail = next((line for line in reversed(lines) if line.strip()), '')[:500]
+        if detail.startswith('Stopped: '):
+            try:
+                session = json.loads(detail.removeprefix('Stopped: '))
+                detail = (f"Last session: {session['last_ack'][2]:,} frames queued, "
+                          f"{session['last_ack'][3]} rendering errors")
+            except (ValueError, KeyError, IndexError):
+                detail = 'Display stopped'
+        elif not running and detail.startswith('ipad-screen:') and connected and not external:
+            message = 'Last session failed. Ready to retry.'
     return dict(configured=True, running=running, external=external,
                 connected=connected, ready=connected and token.exists() and not external,
                 model=config.get('model', 'pro105'), message=message, detail=detail)
@@ -83,6 +92,9 @@ def start(mode, encoder):
         raise ValueError('Stop the current display session before starting another')
     if not current.get('ready'):
         raise ValueError(current['message'])
+    log = root / '.runtime/plugin-session.log'
+    log.touch(mode=0o600)
+    log.write_text('')
     # The service owns capture independently of QML reloads and extra monitors.
     command = ['systemd-run', '--user', '--collect', '--unit=' + UNIT,
                '--property=Type=exec', '--property=KillMode=mixed',
@@ -90,7 +102,7 @@ def start(mode, encoder):
                '--property=PartOf=graphical-session.target',
                '--property=StandardOutput=append:' + str(root / '.runtime/plugin-session.log'),
                '--property=StandardError=inherit']
-    for key in ('WAYLAND_DISPLAY', 'HYPRLAND_INSTANCE_SIGNATURE', 'XDG_RUNTIME_DIR', 'PATH'):
+    for key in ('WAYLAND_DISPLAY', 'HYPRLAND_INSTANCE_SIGNATURE', 'XDG_RUNTIME_DIR', 'SSH_AUTH_SOCK', 'PATH'):
         if key in os.environ:
             command.append('--setenv=' + key + '=' + os.environ[key])
     command += [sys.executable, str(root / 'scripts/native.py'), '--mode', mode, '--encoder', encoder]

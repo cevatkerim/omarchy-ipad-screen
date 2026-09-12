@@ -15,6 +15,7 @@ class ControllerTests(unittest.TestCase):
     def test_start_keeps_paths_as_arguments_and_preserves_session_environment(self):
         with tempfile.TemporaryDirectory(prefix='ipad host ') as directory:
             root = Path(directory)
+            (root / '.runtime').mkdir()
             with patch.object(control, 'backend', return_value=root), \
                  patch.object(control, 'status', return_value={'ready': True}), \
                  patch.object(control, 'run', return_value=subprocess.CompletedProcess([], 0, '', '')) as run, \
